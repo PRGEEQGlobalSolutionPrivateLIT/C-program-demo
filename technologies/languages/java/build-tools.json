@@ -1,0 +1,7 @@
+{
+  "supported": [
+    "javac",
+    "maven",
+    "gradle"
+  ]
+}

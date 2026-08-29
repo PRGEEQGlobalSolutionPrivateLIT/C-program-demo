@@ -1,0 +1,7 @@
+{
+  "image": "elabs-c-runtime",
+  "compiler": "gcc",
+  "sourceExtension": ".c",
+  "defaultSourceFile": "main.c",
+  "defaultExecutable": "main"
+}
