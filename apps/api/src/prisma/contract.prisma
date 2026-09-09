@@ -1,0 +1,323 @@
+// use prisma-next
+
+enum AssessmentStatus {
+  DRAFT
+  READY_FOR_REVIEW
+  UNDER_REVIEW
+  APPROVED
+  PUBLISHED
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum BuilderStep {
+  SETUP
+  QUESTIONS
+  SCORING
+  DELIVERY
+  REVIEW
+  PUBLISH
+}
+
+enum QuestionType {
+  CODING
+  MCQ
+  MULTI_SELECT
+  TRUE_FALSE
+  DEBUGGING
+  SQL
+  SHORT_ANSWER
+  CASE_STUDY
+  FILE_UPLOAD
+}
+
+enum TestCaseType {
+  SAMPLE
+  PUBLIC
+  HIDDEN
+}
+
+enum AudienceType {
+  ALL_LEARNERS
+  SELECTED_LEARNERS
+  BATCH
+  GROUP
+}
+
+enum AiPolicy {
+  DISABLED
+  HINTS_ONLY
+  DEBUG_SUPPORT
+  FULL
+}
+
+enum DevicePolicy {
+  ANY
+  DESKTOP_ONLY
+  REGISTERED_DEVICE
+}
+
+model Assessment {
+  id                String           @id @default(uuid())
+  organizationId    String
+  title             String
+  code              String
+  assessmentType    String?
+  description       String?
+  instructions      String?
+  technology        String?
+  difficulty        String?
+  plannedQuestions  Int?
+  totalMarks        Float?
+  durationMinutes   Int?
+
+  status            AssessmentStatus @default(DRAFT)
+  builderStep       BuilderStep      @default(SETUP)
+  currentVersion    Int              @default(1)
+
+  createdByUserId   String
+  updatedByUserId   String?
+
+  createdAt         TimestamptzString @default(now())
+  updatedAt         temporal.updatedAtString()
+
+  sections          AssessmentSection[]
+  assessmentQuestions AssessmentQuestion[]
+  scoringRule       AssessmentScoringRule?
+  delivery          AssessmentDelivery?
+  securityPolicy    AssessmentSecurityPolicy?
+  publications      AssessmentPublication[]
+  auditLogs         AssessmentAuditLog[]
+
+  @@unique([organizationId, code])
+}
+
+model AssessmentSection {
+  id              String      @id @default(uuid())
+  assessmentId    String
+  title           String
+  description     String?
+  sequence        Int
+  totalMarks      Float?
+  durationMinutes Int?
+
+  createdAt       TimestamptzString @default(now())
+
+  assessment      Assessment  @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  questions       AssessmentQuestion[]
+
+  @@unique([assessmentId, sequence])
+}
+
+model Question {
+  id                String       @id @default(uuid())
+  organizationId    String
+  code              String
+  title             String
+  questionType      QuestionType
+  difficulty        String?
+  technology        String?
+  bloomsLevel       String?
+  skillId           String?
+  subskillId        String?
+  status            String       @default("DRAFT")
+
+  createdByUserId   String
+  updatedByUserId   String?
+
+  createdAt         TimestamptzString @default(now())
+  updatedAt         temporal.updatedAtString()
+
+  codingQuestion    CodingQuestion?
+  assessments       AssessmentQuestion[]
+
+  @@unique([organizationId, code])
+}
+
+model AssessmentQuestion {
+  id                  String      @id @default(uuid())
+  assessmentId        String
+  questionId          String
+  sectionId           String?
+  sequence            Int
+  marks               Float
+  mandatory           Boolean     @default(true)
+  negativeMarks       Float?
+  randomizationGroup  String?
+
+  createdAt           TimestamptzString @default(now())
+
+  assessment          Assessment  @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  question            Question    @relation(fields: [questionId], references: [id])
+  section             AssessmentSection? @relation(fields: [sectionId], references: [id])
+
+  @@unique([assessmentId, questionId])
+}
+
+model CodingQuestion {
+  questionId          String   @id
+  problemStatement    String
+  inputFormat         String?
+  outputFormat        String?
+  constraintsText     String?
+  exampleInput        String?
+  exampleOutput       String?
+
+  language            String
+  starterCode         String?
+  referenceSolution   String?
+
+  compiler            String?
+  languageStandard    String?
+  timeLimitSeconds    Int      @default(2)
+  memoryLimitMb       Int      @default(256)
+  aiPolicy            AiPolicy @default(DISABLED)
+
+  question            Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  testCases           CodingTestCase[]
+}
+
+model CodingTestCase {
+  id              String       @id @default(uuid())
+  questionId      String
+  name            String
+  testType        TestCaseType
+  inputData       String
+  expectedOutput  String
+  marks           Float
+  sequence        Int
+  isActive        Boolean      @default(true)
+
+  createdAt       TimestamptzString @default(now())
+
+  codingQuestion  CodingQuestion @relation(fields: [questionId], references: [questionId], onDelete: Cascade)
+
+  @@unique([questionId, sequence])
+}
+
+model AssessmentScoringRule {
+  id                    String     @id @default(uuid())
+  assessmentId          String     @unique
+
+  passPercentage        Float
+  maximumAttempts       Int        @default(1)
+
+  negativeMarking       Boolean    @default(false)
+  negativeMarkValue     Float?
+  partialMarking        Boolean    @default(true)
+
+  allowBackNavigation   Boolean    @default(true)
+  allowQuestionSkip     Boolean    @default(true)
+  autoSubmitOnTimeout   Boolean    @default(true)
+
+  createdAt             TimestamptzString @default(now())
+  updatedAt             temporal.updatedAtString()
+
+  assessment            Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+}
+
+model AssessmentDelivery {
+  id                String      @id @default(uuid())
+  assessmentId      String      @unique
+
+  startsAt          TimestamptzString?
+  endsAt            TimestamptzString?
+
+  audienceType      AudienceType @default(ALL_LEARNERS)
+  batchOrGroup      String?
+  selectedLearners  String?
+
+  aiPolicy          AiPolicy     @default(DISABLED)
+
+  createdAt         TimestamptzString @default(now())
+  updatedAt         temporal.updatedAtString()
+
+  assessment        Assessment   @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+}
+
+model AssessmentSecurityPolicy {
+  id                        String       @id @default(uuid())
+  assessmentId              String       @unique
+
+  fullscreenMode            Boolean      @default(false)
+  tabSwitchDetection        Boolean      @default(false)
+  copyPasteDetection        Boolean      @default(false)
+  copyPasteRestriction      Boolean      @default(false)
+  textSelectionDetection    Boolean      @default(false)
+  textSelectionRestriction  Boolean      @default(false)
+
+  autoSubmitOnViolation     Boolean      @default(false)
+  maximumTabSwitches        Int          @default(3)
+  violationLimit            Int          @default(3)
+
+  devicePolicy              DevicePolicy @default(ANY)
+
+  cameraProctoring          Boolean      @default(false)
+  microphoneMonitoring      Boolean      @default(false)
+  identityVerification      Boolean      @default(false)
+
+  blockBrowserExtensions    Boolean      @default(false)
+  disableRightClick         Boolean      @default(false)
+  preventPrinting           Boolean      @default(false)
+  preventScreenshots        Boolean      @default(false)
+
+  createdAt                 TimestamptzString @default(now())
+  updatedAt                 temporal.updatedAtString()
+
+  assessment                Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  networks                  AssessmentAllowedNetwork[]
+}
+
+model AssessmentAllowedNetwork {
+  id                String   @id @default(uuid())
+  securityPolicyId  String
+  networkCidr       String
+  description       String?
+
+  createdAt         TimestamptzString @default(now())
+
+  securityPolicy    AssessmentSecurityPolicy @relation(
+    fields: [securityPolicyId],
+    references: [id],
+    onDelete: Cascade
+  )
+}
+
+model AssessmentPublication {
+  id                    String   @id @default(uuid())
+  assessmentId          String
+  versionNumber         Int
+
+  publicationStatus     String   @default("PUBLISHED")
+
+  publishedByUserId     String
+  publishedAt           TimestamptzString @default(now())
+
+  unpublishedByUserId   String?
+  unpublishedAt         TimestamptzString?
+
+  assessment            Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, versionNumber])
+}
+
+model AssessmentAuditLog {
+  id              String   @id @default(uuid())
+  organizationId  String
+  assessmentId    String
+  userId          String
+  action          String
+  entityType      String?
+  entityId        String?
+
+  previousValue   Json?
+  newValue        Json?
+
+  ipAddress       String?
+  userAgent       String?
+
+  createdAt       TimestamptzString @default(now())
+
+  assessment      Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+}

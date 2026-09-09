@@ -1,0 +1,92 @@
+{
+  "technology": "c",
+  "levels": [
+    {
+      "level": 1,
+      "name": "Foundation",
+      "topics": [
+        "Program structure",
+        "Variables",
+        "Data types",
+        "Operators",
+        "Input and output"
+      ]
+    },
+    {
+      "level": 2,
+      "name": "Control Flow",
+      "topics": [
+        "if",
+        "if-else",
+        "switch",
+        "for",
+        "while",
+        "do-while"
+      ]
+    },
+    {
+      "level": 3,
+      "name": "Functions and Arrays",
+      "topics": [
+        "Functions",
+        "Arrays",
+        "Strings",
+        "Scope"
+      ]
+    },
+    {
+      "level": 4,
+      "name": "Pointers",
+      "topics": [
+        "Pointers",
+        "Pointer arithmetic",
+        "Pointers and arrays",
+        "Function pointers"
+      ]
+    },
+    {
+      "level": 5,
+      "name": "Structures and Memory",
+      "topics": [
+        "Structures",
+        "Unions",
+        "Dynamic memory",
+        "malloc",
+        "calloc",
+        "realloc",
+        "free"
+      ]
+    },
+    {
+      "level": 6,
+      "name": "Files and Applied Programming",
+      "topics": [
+        "File handling",
+        "Error handling",
+        "Modular programming"
+      ]
+    },
+    {
+      "level": 7,
+      "name": "Data Structures",
+      "topics": [
+        "Linked lists",
+        "Stacks",
+        "Queues",
+        "Trees",
+        "Sorting",
+        "Searching"
+      ]
+    },
+    {
+      "level": 8,
+      "name": "Systems Programming",
+      "topics": [
+        "Memory management",
+        "Processes",
+        "Threads",
+        "Low-level programming"
+      ]
+    }
+  ]
+}

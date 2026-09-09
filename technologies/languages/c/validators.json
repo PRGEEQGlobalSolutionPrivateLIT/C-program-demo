@@ -1,0 +1,20 @@
+{
+  "technology": "c",
+  "validators": [
+    {
+      "id": "c-compile",
+      "name": "C Compilation Validator",
+      "type": "COMPILE"
+    },
+    {
+      "id": "c-output",
+      "name": "C Output Validator",
+      "type": "OUTPUT"
+    },
+    {
+      "id": "c-test-case",
+      "name": "C Test Case Validator",
+      "type": "TEST_CASE"
+    }
+  ]
+}

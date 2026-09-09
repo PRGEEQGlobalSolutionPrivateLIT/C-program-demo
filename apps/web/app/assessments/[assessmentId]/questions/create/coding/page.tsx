@@ -1,0 +1,1677 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import {
+  useParams,
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
+
+import "./coding-question.css";
+
+type TestCaseType = "SAMPLE" | "PUBLIC" | "HIDDEN";
+
+interface TestCase {
+  id: string;
+  name: string;
+  type: TestCaseType;
+  input: string;
+  expectedOutput: string;
+  marks: number;
+  active: boolean;
+}
+
+interface CodingQuestionForm {
+  title: string;
+  code: string;
+  difficulty: string;
+  marks: number;
+
+  problemStatement: string;
+  inputFormat: string;
+  outputFormat: string;
+  constraints: string;
+  exampleInput: string;
+  exampleOutput: string;
+
+  language: string;
+  starterCode: string;
+  referenceSolution: string;
+
+  bloomsLevel: string;
+  skill: string;
+  subskill: string;
+
+  compiler: string;
+  languageStandard: string;
+  timeLimitSeconds: number;
+  memoryLimitMb: number;
+
+  aiPolicy: string;
+}
+
+interface AssessmentQuestion {
+  id: string;
+  questionId: string;
+  assessmentId: string;
+  sectionId: string | null;
+  sequence: number;
+
+  title: string;
+  type: "CODING";
+  technology: string;
+  difficulty: string;
+  marks: number;
+  source: "NEW";
+}
+
+interface StoredQuestion {
+  id: string;
+  assessmentId: string;
+  sectionId: string | null;
+  type: "CODING";
+  status: "DRAFT";
+  form: CodingQuestionForm;
+  testCases: TestCase[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+const DEFAULT_STARTER_CODE = `#include <stdio.h>
+
+int main() {
+
+    // Write your code here
+
+    return 0;
+}
+`;
+
+const DEFAULT_FORM: CodingQuestionForm = {
+  title: "",
+  code: "",
+  difficulty: "BEGINNER",
+  marks: 10,
+
+  problemStatement: "",
+  inputFormat: "",
+  outputFormat: "",
+  constraints: "",
+  exampleInput: "",
+  exampleOutput: "",
+
+  language: "C",
+  starterCode: DEFAULT_STARTER_CODE,
+  referenceSolution: "",
+
+  bloomsLevel: "APPLY",
+  skill: "",
+  subskill: "",
+
+  compiler: "GCC",
+  languageStandard: "C17",
+  timeLimitSeconds: 2,
+  memoryLimitMb: 256,
+
+  aiPolicy: "DISABLED",
+};
+
+export default function CodingQuestionPage() {
+  const router = useRouter();
+  const params = useParams();
+  const searchParams = useSearchParams();
+
+  const assessmentId = params.assessmentId as string;
+
+  const sectionId =
+    searchParams.get("sectionId") || null;
+
+  const mode =
+    searchParams.get("mode") || "create";
+
+  const editingQuestionId =
+    searchParams.get("questionId");
+
+  const [form, setForm] =
+    useState<CodingQuestionForm>(
+      DEFAULT_FORM,
+    );
+
+  const [testCases, setTestCases] =
+    useState<TestCase[]>([
+      {
+        id: crypto.randomUUID(),
+        name: "Sample Test",
+        type: "SAMPLE",
+        input: "",
+        expectedOutput: "",
+        marks: 10,
+        active: true,
+      },
+    ]);
+
+  const [errors, setErrors] =
+    useState<string[]>([]);
+
+  const [savedMessage, setSavedMessage] =
+    useState("");
+
+  const [advancedOpen, setAdvancedOpen] =
+    useState(false);
+
+  /*
+  ============================================================
+  EDIT MODE LOAD
+  ============================================================
+  */
+
+  useEffect(() => {
+    if (
+      mode !== "edit" ||
+      !editingQuestionId
+    ) {
+      return;
+    }
+
+    const storedQuestions =
+      sessionStorage.getItem(
+        "questionBank",
+      );
+
+    if (!storedQuestions) {
+      return;
+    }
+
+    try {
+      const parsed =
+        JSON.parse(
+          storedQuestions,
+        ) as StoredQuestion[];
+
+      const existing =
+        parsed.find(
+          (question) =>
+            question.id ===
+            editingQuestionId,
+        );
+
+      if (!existing) {
+        return;
+      }
+
+      setForm(existing.form);
+
+      setTestCases(
+        existing.testCases,
+      );
+    } catch {
+      console.error(
+        "Unable to load coding question.",
+      );
+    }
+  }, [
+    mode,
+    editingQuestionId,
+  ]);
+
+  /*
+  ============================================================
+  CALCULATIONS
+  ============================================================
+  */
+
+  const testCaseMarks =
+    useMemo(
+      () =>
+        testCases.reduce(
+          (total, test) =>
+            total +
+            Number(
+              test.marks || 0,
+            ),
+          0,
+        ),
+      [testCases],
+    );
+
+  const activeTestCount =
+    testCases.filter(
+      (test) => test.active,
+    ).length;
+
+  /*
+  ============================================================
+  FIELD UPDATE
+  ============================================================
+  */
+
+  function updateField<
+    K extends keyof CodingQuestionForm,
+  >(
+    field: K,
+    value:
+      CodingQuestionForm[K],
+  ) {
+    setForm(
+      (current) => ({
+        ...current,
+        [field]: value,
+      }),
+    );
+
+    setErrors([]);
+    setSavedMessage("");
+  }
+
+  /*
+  ============================================================
+  TEST CASE ACTIONS
+  ============================================================
+  */
+
+  function addTestCase() {
+    setTestCases(
+      (current) => [
+        ...current,
+        {
+          id:
+            crypto.randomUUID(),
+          name: `Test ${
+            current.length + 1
+          }`,
+          type: "HIDDEN",
+          input: "",
+          expectedOutput: "",
+          marks: 0,
+          active: true,
+        },
+      ],
+    );
+  }
+
+  function updateTestCase<
+    K extends keyof TestCase,
+  >(
+    id: string,
+    field: K,
+    value: TestCase[K],
+  ) {
+    setTestCases(
+      (current) =>
+        current.map(
+          (test) =>
+            test.id === id
+              ? {
+                  ...test,
+                  [field]:
+                    value,
+                }
+              : test,
+        ),
+    );
+
+    setErrors([]);
+  }
+
+  function removeTestCase(
+    id: string,
+  ) {
+    setTestCases(
+      (current) =>
+        current.filter(
+          (test) =>
+            test.id !== id,
+        ),
+    );
+  }
+
+  function duplicateTestCase(
+    id: string,
+  ) {
+    const original =
+      testCases.find(
+        (test) =>
+          test.id === id,
+      );
+
+    if (!original) {
+      return;
+    }
+
+    setTestCases(
+      (current) => [
+        ...current,
+        {
+          ...original,
+          id:
+            crypto.randomUUID(),
+          name:
+            `${original.name} Copy`,
+        },
+      ],
+    );
+  }
+
+  /*
+  ============================================================
+  VALIDATION
+  ============================================================
+  */
+
+  function validateQuestion() {
+    const validationErrors:
+      string[] = [];
+
+    if (!form.title.trim()) {
+      validationErrors.push(
+        "Question title is required.",
+      );
+    }
+
+    if (
+      !form.problemStatement.trim()
+    ) {
+      validationErrors.push(
+        "Problem statement is required.",
+      );
+    }
+
+    if (
+      !form.inputFormat.trim()
+    ) {
+      validationErrors.push(
+        "Input format is required.",
+      );
+    }
+
+    if (
+      !form.outputFormat.trim()
+    ) {
+      validationErrors.push(
+        "Output format is required.",
+      );
+    }
+
+    if (
+      form.marks <= 0
+    ) {
+      validationErrors.push(
+        "Question marks must be greater than zero.",
+      );
+    }
+
+    if (
+      testCases.length === 0
+    ) {
+      validationErrors.push(
+        "At least one test case is required.",
+      );
+    }
+
+    testCases.forEach(
+      (test, index) => {
+        if (
+          !test.expectedOutput.trim()
+        ) {
+          validationErrors.push(
+            `Test ${
+              index + 1
+            }: Expected output is required.`,
+          );
+        }
+      },
+    );
+
+    if (
+      testCaseMarks !==
+      form.marks
+    ) {
+      validationErrors.push(
+        `Test case marks total ${testCaseMarks}. Question marks are ${form.marks}. Both must match.`,
+      );
+    }
+
+    setErrors(
+      validationErrors,
+    );
+
+    return (
+      validationErrors.length ===
+      0
+    );
+  }
+
+  /*
+  ============================================================
+  SAVE DRAFT
+  ============================================================
+  */
+
+  function saveDraft() {
+    const draft = {
+      assessmentId,
+      sectionId,
+      form,
+      testCases,
+      updatedAt:
+        new Date().toISOString(),
+    };
+
+    sessionStorage.setItem(
+      `codingQuestionDraft:${assessmentId}`,
+      JSON.stringify(
+        draft,
+      ),
+    );
+
+    setSavedMessage(
+      "Draft saved",
+    );
+  }
+
+  /*
+  ============================================================
+  SAVE QUESTION
+  ============================================================
+  */
+
+  function saveQuestion() {
+    if (
+      !validateQuestion()
+    ) {
+      return;
+    }
+
+    const now =
+      new Date().toISOString();
+
+    const questionBankRaw =
+      sessionStorage.getItem(
+        "questionBank",
+      );
+
+    const questionBank:
+      StoredQuestion[] =
+      questionBankRaw
+        ? JSON.parse(
+            questionBankRaw,
+          )
+        : [];
+
+    /*
+    ------------------------------------------------------------
+    EDIT EXISTING QUESTION
+    ------------------------------------------------------------
+    */
+
+    if (
+      mode === "edit" &&
+      editingQuestionId
+    ) {
+      const updatedQuestionBank =
+        questionBank.map(
+          (question) =>
+            question.id ===
+            editingQuestionId
+              ? {
+                  ...question,
+                  sectionId,
+                  form,
+                  testCases,
+                  updatedAt:
+                    now,
+                }
+              : question,
+        );
+
+      sessionStorage.setItem(
+        "questionBank",
+        JSON.stringify(
+          updatedQuestionBank,
+        ),
+      );
+
+      const assessmentQuestionsRaw =
+        sessionStorage.getItem(
+          `assessmentQuestions:${assessmentId}`,
+        );
+
+      if (
+        assessmentQuestionsRaw
+      ) {
+        const assessmentQuestions =
+          JSON.parse(
+            assessmentQuestionsRaw,
+          ) as AssessmentQuestion[];
+
+        const updatedAttachments =
+          assessmentQuestions.map(
+            (question) =>
+              question.questionId ===
+              editingQuestionId
+                ? {
+                    ...question,
+                    title:
+                      form.title,
+                    technology:
+                      form.language,
+                    difficulty:
+                      form.difficulty,
+                    marks:
+                      form.marks,
+                    sectionId,
+                  }
+                : question,
+          );
+
+        sessionStorage.setItem(
+          `assessmentQuestions:${assessmentId}`,
+          JSON.stringify(
+            updatedAttachments,
+          ),
+        );
+      }
+
+      router.push(
+        `/assessments/${assessmentId}/questions`,
+      );
+
+      return;
+    }
+
+    /*
+    ------------------------------------------------------------
+    CREATE NEW QUESTION
+    ------------------------------------------------------------
+    */
+
+    const questionId =
+      crypto.randomUUID();
+
+    const storedQuestion:
+      StoredQuestion = {
+      id: questionId,
+      assessmentId,
+      sectionId,
+      type: "CODING",
+      status: "DRAFT",
+      form,
+      testCases,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    sessionStorage.setItem(
+      "questionBank",
+      JSON.stringify([
+        ...questionBank,
+        storedQuestion,
+      ]),
+    );
+
+    /*
+    ------------------------------------------------------------
+    ATTACH TO ASSESSMENT
+    ------------------------------------------------------------
+    */
+
+    const assessmentQuestionsRaw =
+      sessionStorage.getItem(
+        `assessmentQuestions:${assessmentId}`,
+      );
+
+    const assessmentQuestions:
+      AssessmentQuestion[] =
+      assessmentQuestionsRaw
+        ? JSON.parse(
+            assessmentQuestionsRaw,
+          )
+        : [];
+
+    const groupQuestions =
+      assessmentQuestions.filter(
+        (question) =>
+          question.sectionId ===
+          sectionId,
+      );
+
+    const attachment:
+      AssessmentQuestion = {
+      id:
+        crypto.randomUUID(),
+
+      questionId,
+
+      assessmentId,
+
+      sectionId,
+
+      sequence:
+        groupQuestions.length +
+        1,
+
+      title:
+        form.title,
+
+      type:
+        "CODING",
+
+      technology:
+        form.language,
+
+      difficulty:
+        form.difficulty,
+
+      marks:
+        form.marks,
+
+      source:
+        "NEW",
+    };
+
+    sessionStorage.setItem(
+      `assessmentQuestions:${assessmentId}`,
+      JSON.stringify([
+        ...assessmentQuestions,
+        attachment,
+      ]),
+    );
+
+    sessionStorage.removeItem(
+      `codingQuestionDraft:${assessmentId}`,
+    );
+
+    router.push(
+      `/assessments/${assessmentId}/questions`,
+    );
+  }
+
+  /*
+  ============================================================
+  UI
+  ============================================================
+  */
+
+  return (
+    <main className="coding-question-page">
+      <div className="coding-question-container">
+
+        {/* HEADER */}
+
+        <header className="coding-header">
+          <div>
+            <button
+              type="button"
+              className="back-link"
+              onClick={() =>
+                router.push(
+                  `/assessments/${assessmentId}/questions`,
+                )
+              }
+            >
+              ← Questions
+            </button>
+
+            <span className="step-label">
+              STEP 2 OF 6 • QUESTIONS
+            </span>
+
+            <h1>
+              {mode === "edit"
+                ? "Edit Coding Question"
+                : "Create Coding Question"}
+            </h1>
+
+            <p>
+              Define the problem, code
+              configuration and test cases.
+            </p>
+          </div>
+
+          <span className="question-status">
+            Draft
+          </span>
+        </header>
+
+        {/* ====================================================
+            1. QUESTION
+        ==================================================== */}
+
+        <section className="authoring-card">
+          <div className="section-heading">
+            <span className="section-number">
+              1
+            </span>
+
+            <div>
+              <h2>
+                Question
+              </h2>
+
+              <p>
+                Core question details and problem statement.
+              </p>
+            </div>
+          </div>
+
+          <div className="form-grid two-columns">
+
+            <label className="form-field full-width">
+              <span>
+                Question Title *
+              </span>
+
+              <input
+                type="text"
+                value={
+                  form.title
+                }
+                onChange={(event) =>
+                  updateField(
+                    "title",
+                    event.target.value,
+                  )
+                }
+                placeholder="Example: Find Maximum in an Array"
+              />
+            </label>
+
+            <label className="form-field">
+              <span>
+                Question Code
+              </span>
+
+              <input
+                type="text"
+                value={
+                  form.code
+                }
+                onChange={(event) =>
+                  updateField(
+                    "code",
+                    event.target.value,
+                  )
+                }
+                placeholder="Auto or manual"
+              />
+            </label>
+
+            <label className="form-field">
+              <span>
+                Difficulty
+              </span>
+
+              <select
+                value={
+                  form.difficulty
+                }
+                onChange={(event) =>
+                  updateField(
+                    "difficulty",
+                    event.target.value,
+                  )
+                }
+              >
+                <option value="BEGINNER">
+                  Beginner
+                </option>
+
+                <option value="INTERMEDIATE">
+                  Intermediate
+                </option>
+
+                <option value="ADVANCED">
+                  Advanced
+                </option>
+              </select>
+            </label>
+
+            <label className="form-field">
+              <span>
+                Marks *
+              </span>
+
+              <input
+                type="number"
+                min={1}
+                value={
+                  form.marks
+                }
+                onChange={(event) =>
+                  updateField(
+                    "marks",
+                    Math.max(
+                      1,
+                      Number(
+                        event.target.value,
+                      ),
+                    ),
+                  )
+                }
+              />
+            </label>
+
+            <label className="form-field full-width">
+              <span>
+                Problem Statement *
+              </span>
+
+              <textarea
+                rows={6}
+                value={
+                  form.problemStatement
+                }
+                onChange={(event) =>
+                  updateField(
+                    "problemStatement",
+                    event.target.value,
+                  )
+                }
+                placeholder="Describe the programming problem clearly."
+              />
+            </label>
+
+          </div>
+        </section>
+
+        {/* ====================================================
+            2. INPUT / OUTPUT
+        ==================================================== */}
+
+        <section className="authoring-card">
+          <div className="section-heading">
+            <span className="section-number">
+              2
+            </span>
+
+            <div>
+              <h2>
+                Input / Output
+              </h2>
+
+              <p>
+                Define how the learner should read input and produce output.
+              </p>
+            </div>
+          </div>
+
+          <div className="form-grid two-columns">
+
+            <label className="form-field">
+              <span>
+                Input Format *
+              </span>
+
+              <textarea
+                rows={4}
+                value={
+                  form.inputFormat
+                }
+                onChange={(event) =>
+                  updateField(
+                    "inputFormat",
+                    event.target.value,
+                  )
+                }
+                placeholder="Example: First line contains integer N..."
+              />
+            </label>
+
+            <label className="form-field">
+              <span>
+                Output Format *
+              </span>
+
+              <textarea
+                rows={4}
+                value={
+                  form.outputFormat
+                }
+                onChange={(event) =>
+                  updateField(
+                    "outputFormat",
+                    event.target.value,
+                  )
+                }
+                placeholder="Example: Print the maximum value."
+              />
+            </label>
+
+            <label className="form-field full-width">
+              <span>
+                Constraints
+              </span>
+
+              <textarea
+                rows={3}
+                value={
+                  form.constraints
+                }
+                onChange={(event) =>
+                  updateField(
+                    "constraints",
+                    event.target.value,
+                  )
+                }
+                placeholder="Example: 1 ≤ N ≤ 1000"
+              />
+            </label>
+
+            <label className="form-field">
+              <span>
+                Example Input
+              </span>
+
+              <textarea
+                rows={4}
+                className="mono-field"
+                value={
+                  form.exampleInput
+                }
+                onChange={(event) =>
+                  updateField(
+                    "exampleInput",
+                    event.target.value,
+                  )
+                }
+              />
+            </label>
+
+            <label className="form-field">
+              <span>
+                Example Output
+              </span>
+
+              <textarea
+                rows={4}
+                className="mono-field"
+                value={
+                  form.exampleOutput
+                }
+                onChange={(event) =>
+                  updateField(
+                    "exampleOutput",
+                    event.target.value,
+                  )
+                }
+              />
+            </label>
+
+          </div>
+        </section>
+
+        {/* ====================================================
+            3. CODE & TEST CASES
+        ==================================================== */}
+
+        <section className="authoring-card">
+          <div className="section-heading">
+            <span className="section-number">
+              3
+            </span>
+
+            <div>
+              <h2>
+                Code & Test Cases
+              </h2>
+
+              <p>
+                Configure language, starter code and automated validation.
+              </p>
+            </div>
+          </div>
+
+          <div className="form-grid two-columns compact-grid">
+
+            <label className="form-field">
+              <span>
+                Language
+              </span>
+
+              <select
+                value={
+                  form.language
+                }
+                onChange={(event) =>
+                  updateField(
+                    "language",
+                    event.target.value,
+                  )
+                }
+              >
+                <option value="C">
+                  C
+                </option>
+              </select>
+            </label>
+
+            <label className="form-field">
+              <span>
+                Compiler
+              </span>
+
+              <input
+                value={
+                  form.compiler
+                }
+                disabled
+              />
+            </label>
+
+          </div>
+
+          <div className="code-grid">
+
+            <label className="form-field">
+              <span>
+                Starter Code
+              </span>
+
+              <textarea
+                rows={12}
+                className="code-textarea"
+                value={
+                  form.starterCode
+                }
+                onChange={(event) =>
+                  updateField(
+                    "starterCode",
+                    event.target.value,
+                  )
+                }
+              />
+            </label>
+
+            <label className="form-field">
+              <span>
+                Reference Solution
+              </span>
+
+              <textarea
+                rows={12}
+                className="code-textarea"
+                value={
+                  form.referenceSolution
+                }
+                onChange={(event) =>
+                  updateField(
+                    "referenceSolution",
+                    event.target.value,
+                  )
+                }
+                placeholder="Add the verified reference solution."
+              />
+            </label>
+
+          </div>
+
+          {/* TEST SUMMARY */}
+
+          <div className="test-case-section-header">
+            <div>
+              <h3>
+                Test Cases
+              </h3>
+
+              <p>
+                {activeTestCount} active •{" "}
+                {testCaseMarks} /{" "}
+                {form.marks} marks
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={
+                addTestCase
+              }
+            >
+              + Add Test Case
+            </button>
+          </div>
+
+          <div className="test-case-list">
+
+            {testCases.map(
+              (test, index) => (
+
+                <div
+                  key={
+                    test.id
+                  }
+                  className="test-case-card"
+                >
+
+                  <div className="test-card-header">
+
+                    <div>
+                      <span className="test-number">
+                        TC
+                        {String(
+                          index + 1,
+                        ).padStart(
+                          2,
+                          "0",
+                        )}
+                      </span>
+
+                      <input
+                        className="test-name-input"
+                        value={
+                          test.name
+                        }
+                        onChange={(event) =>
+                          updateTestCase(
+                            test.id,
+                            "name",
+                            event.target.value,
+                          )
+                        }
+                      />
+                    </div>
+
+                    <div className="test-actions">
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          duplicateTestCase(
+                            test.id,
+                          )
+                        }
+                      >
+                        Duplicate
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={
+                          testCases.length ===
+                          1
+                        }
+                        onClick={() =>
+                          removeTestCase(
+                            test.id,
+                          )
+                        }
+                      >
+                        Remove
+                      </button>
+
+                    </div>
+                  </div>
+
+                  <div className="form-grid test-grid">
+
+                    <label className="form-field">
+                      <span>
+                        Type
+                      </span>
+
+                      <select
+                        value={
+                          test.type
+                        }
+                        onChange={(event) =>
+                          updateTestCase(
+                            test.id,
+                            "type",
+                            event.target
+                              .value as TestCaseType,
+                          )
+                        }
+                      >
+                        <option value="SAMPLE">
+                          Sample
+                        </option>
+
+                        <option value="PUBLIC">
+                          Public
+                        </option>
+
+                        <option value="HIDDEN">
+                          Hidden
+                        </option>
+                      </select>
+                    </label>
+
+                    <label className="form-field">
+                      <span>
+                        Marks
+                      </span>
+
+                      <input
+                        type="number"
+                        min={0}
+                        value={
+                          test.marks
+                        }
+                        onChange={(event) =>
+                          updateTestCase(
+                            test.id,
+                            "marks",
+                            Math.max(
+                              0,
+                              Number(
+                                event.target.value,
+                              ),
+                            ),
+                          )
+                        }
+                      />
+                    </label>
+
+                    <label className="form-field toggle-field">
+                      <span>
+                        Active
+                      </span>
+
+                      <input
+                        type="checkbox"
+                        checked={
+                          test.active
+                        }
+                        onChange={(event) =>
+                          updateTestCase(
+                            test.id,
+                            "active",
+                            event.target.checked,
+                          )
+                        }
+                      />
+                    </label>
+
+                    <label className="form-field full-width">
+                      <span>
+                        Input
+                      </span>
+
+                      <textarea
+                        rows={4}
+                        className="mono-field"
+                        value={
+                          test.input
+                        }
+                        onChange={(event) =>
+                          updateTestCase(
+                            test.id,
+                            "input",
+                            event.target.value,
+                          )
+                        }
+                      />
+                    </label>
+
+                    <label className="form-field full-width">
+                      <span>
+                        Expected Output *
+                      </span>
+
+                      <textarea
+                        rows={4}
+                        className="mono-field"
+                        value={
+                          test.expectedOutput
+                        }
+                        onChange={(event) =>
+                          updateTestCase(
+                            test.id,
+                            "expectedOutput",
+                            event.target.value,
+                          )
+                        }
+                      />
+                    </label>
+
+                  </div>
+
+                </div>
+
+              ),
+            )}
+
+          </div>
+        </section>
+
+        {/* ====================================================
+            4. ADVANCED SETTINGS
+        ==================================================== */}
+
+        <section className="authoring-card advanced-card">
+
+          <button
+            type="button"
+            className="advanced-toggle"
+            onClick={() =>
+              setAdvancedOpen(
+                (current) =>
+                  !current,
+              )
+            }
+          >
+            <div>
+              <span className="section-number">
+                4
+              </span>
+
+              <div>
+                <strong>
+                  Advanced Settings
+                </strong>
+
+                <small>
+                  Skills, Bloom's level, runtime limits and AI policy
+                </small>
+              </div>
+            </div>
+
+            <span>
+              {advancedOpen
+                ? "−"
+                : "+"}
+            </span>
+          </button>
+
+          {advancedOpen && (
+
+            <div className="advanced-content">
+
+              <div className="form-grid two-columns">
+
+                <label className="form-field">
+                  <span>
+                    Bloom's Level
+                  </span>
+
+                  <select
+                    value={
+                      form.bloomsLevel
+                    }
+                    onChange={(event) =>
+                      updateField(
+                        "bloomsLevel",
+                        event.target.value,
+                      )
+                    }
+                  >
+                    <option value="REMEMBER">
+                      Remember
+                    </option>
+
+                    <option value="UNDERSTAND">
+                      Understand
+                    </option>
+
+                    <option value="APPLY">
+                      Apply
+                    </option>
+
+                    <option value="ANALYZE">
+                      Analyze
+                    </option>
+
+                    <option value="EVALUATE">
+                      Evaluate
+                    </option>
+
+                    <option value="CREATE">
+                      Create
+                    </option>
+                  </select>
+                </label>
+
+                <label className="form-field">
+                  <span>
+                    Primary Skill
+                  </span>
+
+                  <input
+                    value={
+                      form.skill
+                    }
+                    onChange={(event) =>
+                      updateField(
+                        "skill",
+                        event.target.value,
+                      )
+                    }
+                    placeholder="Example: C Programming"
+                  />
+                </label>
+
+                <label className="form-field">
+                  <span>
+                    Subskill
+                  </span>
+
+                  <input
+                    value={
+                      form.subskill
+                    }
+                    onChange={(event) =>
+                      updateField(
+                        "subskill",
+                        event.target.value,
+                      )
+                    }
+                    placeholder="Example: Arrays"
+                  />
+                </label>
+
+                <label className="form-field">
+                  <span>
+                    C Standard
+                  </span>
+
+                  <select
+                    value={
+                      form.languageStandard
+                    }
+                    onChange={(event) =>
+                      updateField(
+                        "languageStandard",
+                        event.target.value,
+                      )
+                    }
+                  >
+                    <option value="C17">
+                      C17
+                    </option>
+
+                    <option value="C11">
+                      C11
+                    </option>
+
+                    <option value="C99">
+                      C99
+                    </option>
+                  </select>
+                </label>
+
+                <label className="form-field">
+                  <span>
+                    Time Limit
+                  </span>
+
+                  <div className="inline-unit-field">
+                    <input
+                      type="number"
+                      min={1}
+                      value={
+                        form.timeLimitSeconds
+                      }
+                      onChange={(event) =>
+                        updateField(
+                          "timeLimitSeconds",
+                          Math.max(
+                            1,
+                            Number(
+                              event.target.value,
+                            ),
+                          ),
+                        )
+                      }
+                    />
+
+                    <span>
+                      sec
+                    </span>
+                  </div>
+                </label>
+
+                <label className="form-field">
+                  <span>
+                    Memory Limit
+                  </span>
+
+                  <div className="inline-unit-field">
+                    <input
+                      type="number"
+                      min={64}
+                      value={
+                        form.memoryLimitMb
+                      }
+                      onChange={(event) =>
+                        updateField(
+                          "memoryLimitMb",
+                          Math.max(
+                            64,
+                            Number(
+                              event.target.value,
+                            ),
+                          ),
+                        )
+                      }
+                    />
+
+                    <span>
+                      MB
+                    </span>
+                  </div>
+                </label>
+
+                <label className="form-field">
+                  <span>
+                    AI Assistance
+                  </span>
+
+                  <select
+                    value={
+                      form.aiPolicy
+                    }
+                    onChange={(event) =>
+                      updateField(
+                        "aiPolicy",
+                        event.target.value,
+                      )
+                    }
+                  >
+                    <option value="DISABLED">
+                      Disabled
+                    </option>
+
+                    <option value="HINTS_ONLY">
+                      Hints Only
+                    </option>
+
+                    <option value="DEBUG_SUPPORT">
+                      Debug Support
+                    </option>
+
+                    <option value="FULL">
+                      Full Assistance
+                    </option>
+                  </select>
+                </label>
+
+              </div>
+
+            </div>
+
+          )}
+
+        </section>
+
+        {/* ERRORS */}
+
+        {errors.length > 0 && (
+
+          <div className="error-panel">
+
+            <strong>
+              Please correct the following:
+            </strong>
+
+            <ul>
+              {errors.map(
+                (error, index) => (
+                  <li
+                    key={
+                      `${error}-${index}`
+                    }
+                  >
+                    {error}
+                  </li>
+                ),
+              )}
+            </ul>
+
+          </div>
+
+        )}
+
+        {/* FOOTER */}
+
+        <footer className="coding-footer">
+
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() =>
+              router.push(
+                `/assessments/${assessmentId}/questions`,
+              )
+            }
+          >
+            Cancel
+          </button>
+
+          <div className="footer-actions">
+
+            {savedMessage && (
+              <span className="saved-message">
+                {savedMessage}
+              </span>
+            )}
+
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={
+                saveDraft
+              }
+            >
+              Save Draft
+            </button>
+
+            <button
+              type="button"
+              className="primary-button"
+              onClick={
+                saveQuestion
+              }
+            >
+              {mode === "edit"
+                ? "Update Question"
+                : "Save Question"}
+            </button>
+
+          </div>
+
+        </footer>
+
+      </div>
+    </main>
+  );
+}

@@ -1,6 +1,12 @@
 {
   "id": "c",
   "name": "C",
-  "type": "language",
-  "executionType": "compiled"
+  "displayName": "C Programming",
+  "category": "PROGRAMMING_LANGUAGE",
+  "executionType": "COMPILED",
+  "compiler": "gcc",
+  "sourceExtension": ".c",
+  "defaultFile": "main.c",
+  "monacoLanguage": "c",
+  "active": true
 }

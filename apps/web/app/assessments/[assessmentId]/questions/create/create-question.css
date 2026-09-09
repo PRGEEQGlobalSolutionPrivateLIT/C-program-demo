@@ -1,0 +1,524 @@
+.create-question-page {
+  min-height: 100vh;
+  padding: 28px;
+  background: #e9eef5;
+  color: #25324b;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.create-question-container {
+  max-width: 1450px;
+  margin: 0 auto;
+}
+
+.create-question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 22px;
+}
+
+.back-link {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #24579a;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.step-label {
+  margin-top: 15px;
+  color: #24579a;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.create-question-header h1 {
+  margin: 7px 0;
+  color: #1f2a44;
+  font-size: 30px;
+}
+
+.create-question-header p {
+  max-width: 720px;
+  margin: 0;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.question-status {
+  padding: 9px 15px;
+  border-radius: 12px;
+  color: #a26028;
+  font-size: 11px;
+  font-weight: 900;
+  box-shadow:
+    inset 3px 3px 6px #c7ccd3,
+    inset -3px -3px 6px #ffffff;
+}
+
+/* NAV */
+
+.authoring-nav {
+  position: sticky;
+  top: 10px;
+  z-index: 20;
+
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+
+  margin-bottom: 24px;
+  padding: 11px;
+
+  border-radius: 16px;
+  background: rgba(233, 238, 245, 0.96);
+
+  box-shadow:
+    5px 5px 12px #c7ccd3,
+    -5px -5px 12px #ffffff;
+}
+
+.authoring-nav a {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-radius: 9px;
+  color: #4b5563;
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.authoring-nav a:hover {
+  color: #24579a;
+  box-shadow:
+    inset 2px 2px 4px #c7ccd3,
+    inset -2px -2px 4px #ffffff;
+}
+
+/* SECTION CARD */
+
+.authoring-card {
+  margin-bottom: 23px;
+  padding: 27px;
+  border-radius: 21px;
+  background: #e9eef5;
+
+  box-shadow:
+    8px 8px 16px #c7ccd3,
+    -8px -8px 16px #ffffff;
+}
+
+.section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.section-number {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  flex: 0 0 42px;
+
+  border-radius: 50%;
+
+  color: #24579a;
+  font-size: 11px;
+  font-weight: 900;
+
+  box-shadow:
+    inset 3px 3px 6px #c7ccd3,
+    inset -3px -3px 6px #ffffff;
+}
+
+.section-heading h2 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+.section-heading p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* FIELDS */
+
+.form-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.form-field {
+  display: block;
+  margin-bottom: 18px;
+}
+
+.form-field > span {
+  display: block;
+  margin-bottom: 8px;
+  color: #48536a;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.form-field > span b {
+  color: #a93434;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+
+  border: 0;
+  outline: none;
+
+  padding: 12px 14px;
+  border-radius: 11px;
+
+  background: #e9eef5;
+  color: #25324b;
+
+  font: inherit;
+
+  box-shadow:
+    inset 3px 3px 6px #c7ccd3,
+    inset -3px -3px 6px #ffffff;
+}
+
+.form-field textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.form-field input:focus,
+.form-field textarea:focus,
+.form-field select:focus {
+  box-shadow:
+    inset 4px 4px 8px #c3c9d1,
+    inset -4px -4px 8px #ffffff,
+    0 0 0 2px rgba(36, 87, 154, 0.12);
+}
+
+.code-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.code-editor,
+.code-textarea {
+  font-family:
+    Consolas,
+    "Courier New",
+    monospace !important;
+  font-size: 13px !important;
+}
+
+/* TEST CASE */
+
+.test-case-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.test-summary {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.test-summary div {
+  padding: 15px 17px;
+  border-radius: 13px;
+
+  box-shadow:
+    inset 3px 3px 6px #c7ccd3,
+    inset -3px -3px 6px #ffffff;
+}
+
+.test-summary span {
+  display: block;
+  margin-bottom: 6px;
+  color: #6b7280;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.test-summary strong {
+  font-size: 20px;
+}
+
+.test-case-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.test-case-card {
+  padding: 20px;
+  border-radius: 17px;
+
+  box-shadow:
+    4px 4px 9px #c7ccd3,
+    -4px -4px 9px #ffffff;
+}
+
+.test-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.test-number {
+  color: #24579a;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.test-card-header h3 {
+  margin: 4px 0 0;
+  font-size: 16px;
+}
+
+.test-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.test-actions button {
+  border: 0;
+  padding: 8px 11px;
+  border-radius: 9px;
+  background: #e9eef5;
+  color: #34415a;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+
+  box-shadow:
+    3px 3px 6px #c7ccd3,
+    -3px -3px 6px #ffffff;
+}
+
+.test-actions .danger-button {
+  color: #a33232;
+}
+
+.test-actions button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* EVALUATION */
+
+.evaluation-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.evaluation-card {
+  padding: 18px;
+  border-radius: 14px;
+
+  box-shadow:
+    inset 3px 3px 6px #c7ccd3,
+    inset -3px -3px 6px #ffffff;
+}
+
+.evaluation-card span {
+  display: block;
+  margin-bottom: 8px;
+  color: #6b7280;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.evaluation-card strong {
+  font-size: 20px;
+}
+
+.evaluation-valid strong {
+  color: #28734f;
+}
+
+.evaluation-warning strong {
+  color: #a35126;
+}
+
+/* TOGGLE */
+
+.toggle-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  padding: 15px;
+  border-radius: 13px;
+
+  box-shadow:
+    inset 3px 3px 6px #c7ccd3,
+    inset -3px -3px 6px #ffffff;
+}
+
+.toggle-row input {
+  width: 18px;
+  height: 18px;
+}
+
+.toggle-row strong,
+.toggle-row span {
+  display: block;
+}
+
+.toggle-row strong {
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.toggle-row span {
+  color: #6b7280;
+  font-size: 11px;
+}
+
+/* ERRORS */
+
+.error-panel {
+  margin-bottom: 20px;
+  padding: 18px 20px;
+  border-radius: 14px;
+  color: #963434;
+
+  box-shadow:
+    inset 3px 3px 6px #c7ccd3,
+    inset -3px -3px 6px #ffffff;
+}
+
+.error-panel strong {
+  font-size: 12px;
+}
+
+.error-panel li {
+  margin-top: 5px;
+  font-size: 11px;
+}
+
+/* BUTTONS */
+
+.primary-button,
+.secondary-button {
+  border: 0;
+  min-height: 42px;
+  padding: 10px 18px;
+  border-radius: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.primary-button {
+  background: #24579a;
+  color: white;
+
+  box-shadow:
+    4px 4px 8px #c7ccd3,
+    -4px -4px 8px #ffffff;
+}
+
+.secondary-button {
+  background: #e9eef5;
+  color: #34415a;
+
+  box-shadow:
+    4px 4px 8px #c7ccd3,
+    -4px -4px 8px #ffffff;
+}
+
+/* FOOTER */
+
+.create-question-footer {
+  position: sticky;
+  bottom: 12px;
+  z-index: 20;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  gap: 15px;
+
+  padding: 15px 18px;
+
+  border-radius: 17px;
+  background:
+    rgba(233, 238, 245, 0.96);
+
+  box-shadow:
+    6px 6px 14px #c7ccd3,
+    -6px -6px 14px #ffffff;
+}
+
+.create-question-footer > div {
+  display: flex;
+  gap: 10px;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 900px) {
+  .form-grid,
+  .code-grid,
+  .evaluation-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .test-summary {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 650px) {
+  .create-question-page {
+    padding: 15px;
+  }
+
+  .create-question-header,
+  .test-case-section-header,
+  .test-card-header,
+  .create-question-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .test-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .test-actions,
+  .create-question-footer > div {
+    flex-wrap: wrap;
+  }
+}
